@@ -1,0 +1,1166 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BG Match Composer</title>
+
+  <style>
+    :root{
+      --bg1:#ffffff;
+      --bg2:#f6f7fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:#e7eaf2;
+      --shadow: 0 18px 60px rgba(15, 23, 42, .10);
+      --shadow2: 0 10px 28px rgba(15, 23, 42, .08);
+      --radius: 18px;
+
+      --accent:#6b7cff;
+      --accentSoft: rgba(107,124,255,.14);
+
+      --pink:#ff4fa3;
+      --pinkSoft: rgba(255,79,163,.14);
+
+      --idleBorder:#e8edf6;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(900px 420px at 15% 0%, rgba(107,124,255,.12), transparent 60%),
+        radial-gradient(880px 420px at 90% -5%, rgba(255,79,163,.10), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      min-height:100vh;
+      padding:24px;
+    }
+
+    .wrap{max-width:1120px;margin:0 auto}
+    header{
+      display:flex; align-items:flex-end; justify-content:space-between;
+      gap:16px; margin-bottom:10px;
+    }
+    h1{
+      font-size:18px; letter-spacing:.02em; margin:0;
+      display:flex; align-items:center; gap:10px;
+    }
+    .spark{
+      width:22px;height:22px;border-radius:10px;
+      display:inline-flex;align-items:center;justify-content:center;
+      background: linear-gradient(180deg, rgba(107,124,255,.18), rgba(255,79,163,.12));
+      border:1px solid rgba(15,23,42,.08);
+      box-shadow: 0 10px 22px rgba(15,23,42,.08);
+      font-size:13px;
+    }
+    .badge{
+      font-size:12px;
+      padding:4px 10px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      color:var(--muted);
+      background:rgba(255,255,255,.7);
+      box-shadow: 0 6px 18px rgba(15,23,42,.05);
+      white-space:nowrap;
+    }
+
+    /* step bar */
+    .steps{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin: 10px 0 16px;
+    }
+    .step{
+      display:flex; align-items:center; gap:8px;
+      padding:8px 10px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:rgba(255,255,255,.85);
+      color:var(--muted);
+      font-size:12px;
+      font-weight:900;
+      box-shadow: 0 10px 22px rgba(15,23,42,.05);
+    }
+    .step .num{
+      width:18px;height:18px;border-radius:999px;
+      display:inline-flex;align-items:center;justify-content:center;
+      font-weight:900;font-size:11px;
+      background:#f1f5ff;
+      color:#3730a3;
+      border:1px solid #dfe7ff;
+    }
+    .step.active{
+      color:#0f172a;
+      border-color: rgba(255,79,163,.35);
+      background: linear-gradient(180deg, rgba(255,79,163,.14), rgba(255,79,163,.06));
+    }
+    .step.done{
+      color:#0f172a;
+      border-color: rgba(107,124,255,.30);
+      background: linear-gradient(180deg, rgba(107,124,255,.14), rgba(107,124,255,.06));
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 390px 1fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:14px 14px 12px;
+      border-bottom:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.75));
+    }
+    .card .bd{ padding:14px; }
+
+    /* section title */
+    .secTitle{
+      margin:0;
+      font-size:14px;
+      letter-spacing:.02em;
+      font-weight:1000;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .secBadge{
+      width:26px;height:26px;border-radius:10px;
+      display:inline-flex;align-items:center;justify-content:center;
+      font-weight:1000;
+      font-size:12px;
+      color:#111827;
+      background: linear-gradient(180deg, rgba(107,124,255,.16), rgba(255,79,163,.10));
+      border:1px solid rgba(15,23,42,.08);
+      box-shadow: 0 10px 20px rgba(15,23,42,.06);
+      flex:0 0 auto;
+    }
+
+    /* Upload area */
+    .uploader{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:12px;
+    }
+    @media (max-width: 520px){
+      .uploader{ grid-template-columns: 1fr; }
+    }
+    .up{
+      border:1px solid var(--idleBorder);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.88));
+      padding:12px;
+      box-shadow: var(--shadow2);
+      min-height:118px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:10px;
+      position:relative;
+    }
+    .up.next{
+      border-color: rgba(255,79,163,.35);
+      box-shadow: 0 18px 44px rgba(255,79,163,.12);
+      outline: 3px solid rgba(255,79,163,.12);
+    }
+    .up.done{
+      border-color: rgba(107,124,255,.30);
+      outline: 3px solid rgba(107,124,255,.10);
+    }
+    .upTitle{
+      margin:0;
+      font-size:13px;
+      font-weight:1000;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .mark{
+      width:22px;height:22px;border-radius:10px;
+      display:inline-flex;align-items:center;justify-content:center;
+      background: rgba(15,23,42,.04);
+      border:1px solid rgba(15,23,42,.06);
+      font-size:13px;
+    }
+
+    /* fixed-height button + status pill */
+    .fileBtn{
+      position:relative;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 12px;
+      border-radius: 12px;
+      border:1px dashed rgba(15,23,42,.18);
+      background: rgba(255,255,255,.98);
+      cursor:pointer;
+      user-select:none;
+      font-weight:1000;
+      box-shadow: 0 10px 24px rgba(15,23,42,.06);
+      width:100%;
+      min-height:52px;
+      max-width: 260px;
+    }
+    .fileBtn .label{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-width:0;
+    }
+    .fileBtn input{
+      position:absolute;
+      inset:0;
+      opacity:0;
+      cursor:pointer;
+    }
+    .pill{
+      display:none;
+      font-size:11px;
+      font-weight:900;
+      padding:6px 8px;
+      border-radius:999px;
+      border:1px solid rgba(107,124,255,.28);
+      background: rgba(107,124,255,.10);
+      color:#3730a3;
+      white-space:nowrap;
+      flex:0 0 auto;
+    }
+    .fileBtn.hasFile .pill{ display:inline-flex; }
+    .hintDot{
+      width:8px;height:8px;border-radius:999px;
+      background: rgba(255,79,163,.65);
+      box-shadow: 0 0 0 4px rgba(255,79,163,.12);
+      display:none;
+      flex:0 0 auto;
+    }
+    .up.next .hintDot{ display:inline-block; }
+
+    /* Divider */
+    .hd2{
+      margin:16px -14px 0;
+      padding:14px 14px 12px;
+      border-top:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.75));
+    }
+
+    /* Controls */
+    .ctl{
+      display:grid;
+      grid-template-columns: 1fr 120px;
+      gap:10px;
+      align-items:center;
+      margin-top:12px;
+    }
+    .ctl label{ font-size:12px; color:var(--muted); font-weight:1000; }
+    .ctl input[type=range]{ width:100%; }
+    .mono{
+      font-variant-numeric: tabular-nums;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      color: var(--muted);
+      font-size:12px;
+      text-align:right;
+    }
+
+    /* Buttons */
+    .row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+
+    .btn{
+      appearance:none;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.98);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      transition: transform .06s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+      user-select:none;
+      box-shadow: 0 8px 22px rgba(15,23,42,.06);
+      white-space:nowrap;
+      font-weight:1000;
+    }
+    .btn:hover{
+      border-color: rgba(15,23,42,.12);
+      box-shadow: 0 14px 34px rgba(15,23,42,.10);
+      transform: translateY(-1px);
+    }
+    .btn:active{ transform: translateY(0); box-shadow: 0 10px 24px rgba(15,23,42,.08); }
+    .btn:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+
+    /* Sub buttons: not bold */
+    .btn.sub{
+      font-weight:600;
+      color:#334155;
+    }
+    .btn.ghost{
+      background: transparent;
+      box-shadow:none;
+      border-color: transparent;
+    }
+    .btn.ghost:hover{
+      border-color: rgba(15,23,42,.10);
+      background: rgba(15,23,42,.03);
+      box-shadow:none;
+      transform:none;
+    }
+
+    /* match button state */
+    .btn.matchIdle{
+      border-color: var(--idleBorder);
+      background: linear-gradient(180deg, #ffffff, #f8fafc);
+      color: #334155;
+    }
+    .btn.matchIdle:hover{
+      border-color: rgba(255,79,163,.28);
+      box-shadow: 0 18px 44px rgba(255,79,163,.12);
+    }
+    .btn.matchDone{
+      border-color: rgba(107,124,255,.45);
+      background: linear-gradient(180deg, rgba(107,124,255,.22), rgba(107,124,255,.10));
+      color:#1e1b4b;
+    }
+
+    /* Segmented */
+    .segRow{
+      margin-top:12px;
+      padding:10px 12px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background: rgba(255,255,255,.98);
+      box-shadow: var(--shadow2);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .segRow strong{ font-size:12px; font-weight:1000; color:var(--muted); }
+    .seg{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .seg button{
+      padding:8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(15,23,42,.12);
+      background: rgba(255,255,255,.98);
+      color: rgba(15,23,42,.92);
+      cursor:pointer;
+      font-weight:1000;
+      font-size:12px;
+      box-shadow: 0 8px 18px rgba(15,23,42,.06);
+      white-space:nowrap;
+    }
+    .seg button.active{
+      border-color: rgba(107,124,255,.45);
+      background: rgba(107,124,255,.12);
+    }
+
+    /* Download card (separate) */
+    .dlCard{
+      margin-top:12px;
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.92);
+      box-shadow: var(--shadow2);
+      overflow:hidden;
+    }
+    .dlCard .hd{
+      padding:14px 14px 12px;
+      border-bottom:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.80));
+    }
+    .dlCard .bd{
+      padding:14px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-start; /* ✅ 横長にしない */
+    }
+    .btn.download{
+      border: 0;
+      color: #ffffff;
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size:14px;
+      width: min(320px, 100%);  /* ✅ 上限つき */
+      background: linear-gradient(90deg, rgba(255,79,163,1), rgba(107,124,255,1));
+      box-shadow: 0 18px 44px rgba(107,124,255,.18);
+    }
+    .btn.download:hover{
+      box-shadow: 0 22px 54px rgba(255,79,163,.18);
+    }
+
+    /* Stage */
+    .stage{ position:relative; padding:14px; }
+    .canvasWrap{
+      border:1px solid var(--line);
+      border-radius: 16px;
+      overflow:hidden;
+      background: #ffffff;
+      position:relative;
+      box-shadow: var(--shadow);
+    }
+    canvas{
+      display:block;
+      width:100%;
+      height:auto;
+      background:#fff;
+    }
+
+    .overlayHelp{
+      position:absolute;
+      inset:auto 12px 12px 12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      pointer-events:none;
+    }
+    .pillHelp{
+      pointer-events:none;
+      font-size:12px;
+      color: rgba(15,23,42,.88);
+      background: rgba(255,255,255,.78);
+      border:1px solid rgba(15,23,42,.10);
+      padding:8px 10px;
+      border-radius: 999px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 28px rgba(15,23,42,.08);
+      white-space:nowrap;
+    }
+    .pillHelp kbd{
+      font-family: inherit;
+      font-size:12px;
+      padding:2px 8px;
+      border-radius: 8px;
+      background: rgba(15,23,42,.05);
+      border: 1px solid rgba(15,23,42,.10);
+    }
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="spark">✨</span>BG Match Composer</h1>
+    <div class="badge">made by miyu.watanabe</div>
+  </header>
+
+  <div class="steps" id="stepBar">
+    <div class="step" id="st1"><span class="num">1</span>背景</div>
+    <div class="step" id="st2"><span class="num">2</span>商品</div>
+    <div class="step" id="st3"><span class="num">3</span>配置</div>
+    <div class="step" id="st4"><span class="num">4</span>なじませる</div>
+    <div class="step" id="st5"><span class="num">5</span>ダウンロード</div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT main -->
+    <section class="card">
+      <div class="hd">
+        <div class="secTitle"><span class="secBadge">①</span>画像を選択</div>
+      </div>
+
+      <div class="bd">
+        <div class="uploader">
+          <div class="up" id="upBg">
+            <p class="upTitle"><span class="mark">🖼️</span>背景画像</p>
+            <div class="upBody">
+              <label class="fileBtn" id="bgBtn">
+                <span class="label"><span class="hintDot"></span>背景を選ぶ</span>
+                <span class="pill" id="bgPill">アップロード済</span>
+                <input id="bgInput" type="file" accept="image/*" />
+              </label>
+            </div>
+          </div>
+
+          <div class="up" id="upFg">
+            <p class="upTitle"><span class="mark">📦</span>商品画像</p>
+            <div class="upBody">
+              <label class="fileBtn" id="fgBtn">
+                <span class="label"><span class="hintDot"></span>商品を選ぶ</span>
+                <span class="pill" id="fgPill">アップロード済</span>
+                <input id="fgInput" type="file" accept="image/*" />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="hd2">
+          <div class="secTitle"><span class="secBadge">②</span>配置</div>
+        </div>
+
+        <div class="ctl">
+          <label for="scaleRange">スケール</label>
+          <div class="mono"><span id="scaleVal">1.00</span>x</div>
+          <input id="scaleRange" type="range" min="0.2" max="3" step="0.01" value="1" />
+          <button class="btn ghost sub" id="fitBtn" type="button">中央に戻す</button>
+        </div>
+
+        <div class="ctl">
+          <label for="rotRange">角度</label>
+          <div class="mono"><span id="rotVal">0</span>°</div>
+          <input id="rotRange" type="range" min="-30" max="30" step="1" value="0" />
+          <button class="btn ghost sub" id="rotResetBtn" type="button">角度リセット</button>
+        </div>
+
+        <div class="hd2">
+          <div class="secTitle"><span class="secBadge">③</span>編集</div>
+        </div>
+
+        <div class="row">
+          <button class="btn matchIdle" id="matchBtn" type="button" disabled>なじませる</button>
+          <button class="btn sub" id="resetBtn" type="button" disabled>フィルター解除</button>
+        </div>
+
+        <!-- ✅ 追加：明るさレバー（角度と同じ見た目） -->
+        <div class="ctl" id="brightCtl" style="margin-top:14px;">
+          <label for="brightRange">明るさ</label>
+          <div class="mono"><span id="brightVal">0</span></div>
+          <input id="brightRange" type="range" min="-40" max="40" step="1" value="0" />
+          <button class="btn ghost sub" id="brightResetBtn" type="button">明るさリセット</button>
+        </div>
+
+        <div class="segRow">
+          <strong>出力サイズ</strong>
+          <div class="seg">
+            <button id="segSB" type="button" class="active">1200×628（SB）</button>
+            <button id="segDSP" type="button">600×500（DSP）</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT -->
+    <section class="card stage">
+      <div class="canvasWrap">
+        <canvas id="cv" width="1280" height="720"></canvas>
+        <div class="overlayHelp">
+          <div class="pillHelp">ドラッグで移動 / <kbd>Shift</kbd>で微調整</div>
+          <div class="pillHelp">外枠=出力 / 内枠=安全</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Download card -->
+  <section class="dlCard" style="margin-top:16px;">
+    <div class="hd">
+      <div class="secTitle"><span class="secBadge">④</span>ダウンロード</div>
+    </div>
+    <div class="bd">
+      <button class="btn download" id="dlBtn" type="button" disabled>⬇ ダウンロード</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  // ===== DOM =====
+  const bgInput = document.getElementById('bgInput');
+  const fgInput = document.getElementById('fgInput');
+
+  const bgBtn = document.getElementById('bgBtn');
+  const fgBtn = document.getElementById('fgBtn');
+
+  const upBg = document.getElementById('upBg');
+  const upFg = document.getElementById('upFg');
+
+  const st1 = document.getElementById('st1');
+  const st2 = document.getElementById('st2');
+  const st3 = document.getElementById('st3');
+  const st4 = document.getElementById('st4');
+  const st5 = document.getElementById('st5');
+
+  const scaleRange = document.getElementById('scaleRange');
+  const scaleVal = document.getElementById('scaleVal');
+  const rotRange = document.getElementById('rotRange');
+  const rotVal = document.getElementById('rotVal');
+  const rotResetBtn = document.getElementById('rotResetBtn');
+
+  const matchBtn = document.getElementById('matchBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const dlBtn = document.getElementById('dlBtn');
+  const fitBtn = document.getElementById('fitBtn');
+
+  const segSB = document.getElementById('segSB');
+  const segDSP = document.getElementById('segDSP');
+
+  // ✅ 明るさ
+  const brightRange = document.getElementById('brightRange');
+  const brightVal = document.getElementById('brightVal');
+  const brightResetBtn = document.getElementById('brightResetBtn');
+
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+
+  const PRESETS = {
+    SB:  { key:"SB",  w:1200, h:628 },
+    DSP: { key:"DSP", w:600,  h:500 },
+  };
+
+  const state = {
+    bgImg: null,
+    fgImg: null,
+
+    fgX: cv.width * 0.5,
+    fgY: cv.height * 0.62,
+    fgScale: 1,
+    fgRotDeg: 0,
+
+    dragging: false,
+    dragOffX: 0,
+    dragOffY: 0,
+
+    filteredFgCanvas: null,
+    isMatched: false,
+    bgStats: null,
+
+    // ✅ 明るさ（商品にのみ適用）
+    brightness: 0,          // -40..40
+    activePreset: PRESETS.SB,
+  };
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const deg2rad = (d) => d * Math.PI / 180;
+
+  function loadImageFromFile(file){
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  function fitCanvasToBackground(img){
+    const maxW = 1600;
+    const maxH = 900;
+    const ar = img.width / img.height;
+
+    let w = maxW, h = Math.round(maxW / ar);
+    if(h > maxH){
+      h = maxH;
+      w = Math.round(maxH * ar);
+    }
+    cv.width = w;
+    cv.height = h;
+
+    state.fgX = cv.width * 0.5;
+    state.fgY = cv.height * 0.62;
+  }
+
+  function computeBgStats(img){
+    const s = 180;
+    const off = document.createElement('canvas');
+    const octx = off.getContext('2d', { willReadFrequently: true });
+    const ar = img.width / img.height;
+    off.width = s;
+    off.height = Math.round(s / ar);
+    octx.drawImage(img, 0, 0, off.width, off.height);
+
+    const data = octx.getImageData(0,0,off.width, off.height).data;
+    let r=0,g=0,b=0, n=0;
+    let lum=0, lum2=0;
+
+    for(let i=0;i<data.length;i+=4){
+      const a = data[i+3];
+      if(a < 10) continue;
+      const rr=data[i], gg=data[i+1], bb=data[i+2];
+      r += rr; g += gg; b += bb; n++;
+      const y = 0.2126*rr + 0.7152*gg + 0.0722*bb;
+      lum += y;
+      lum2 += y*y;
+    }
+    if(n === 0) n = 1;
+    r/=n; g/=n; b/=n;
+    lum/=n;
+    const varLum = Math.max(0, lum2/n - lum*lum);
+    const stdLum = Math.sqrt(varLum);
+    const sat = (Math.max(r,g,b) - Math.min(r,g,b)) / 255;
+
+    return { r, g, b, lum, stdLum, sat };
+  }
+
+  function applyBrightness(canvas, amount){
+    // amount: -40..40  → additive per channel
+    if(!canvas || amount === 0) return canvas;
+    const off = document.createElement('canvas');
+    off.width = canvas.width;
+    off.height = canvas.height;
+    const octx = off.getContext('2d', { willReadFrequently: true });
+    octx.drawImage(canvas, 0, 0);
+
+    const imgData = octx.getImageData(0,0,off.width, off.height);
+    const d = imgData.data;
+    for(let i=0;i<d.length;i+=4){
+      const a = d[i+3];
+      if(a < 2) continue;
+      d[i]   = clamp(d[i]   + amount, 0, 255);
+      d[i+1] = clamp(d[i+1] + amount, 0, 255);
+      d[i+2] = clamp(d[i+2] + amount, 0, 255);
+    }
+    octx.putImageData(imgData, 0, 0);
+    return off;
+  }
+
+  function makeFilteredProduct(fgImg, bgStats){
+    const off = document.createElement('canvas');
+    off.width = fgImg.width;
+    off.height = fgImg.height;
+    const octx = off.getContext('2d', { willReadFrequently: true });
+    octx.clearRect(0,0,off.width, off.height);
+    octx.drawImage(fgImg, 0, 0);
+
+    const imgData = octx.getImageData(0,0,off.width, off.height);
+    const d = imgData.data;
+
+    const colorBlend = 0.08;
+    const lumBlend = 0.14;
+    const contrast = clamp(1 + (bgStats.stdLum - 40) / 320, 0.96, 1.06);
+    const satBlend = 0.10;
+    const satScale = clamp(1 + (bgStats.sat - 0.18) * 0.25, 0.95, 1.05);
+
+    let fgLum=0, m=0;
+    for(let i=0;i<d.length;i+=4){
+      const a = d[i+3];
+      if(a < 10) continue;
+      const rr=d[i], gg=d[i+1], bb=d[i+2];
+      fgLum += 0.2126*rr + 0.7152*gg + 0.0722*bb;
+      m++;
+    }
+    if(m === 0) m = 1;
+    fgLum/=m;
+
+    const targetLum = fgLum + (bgStats.lum - fgLum) * lumBlend;
+    const lumRatio = clamp(targetLum / Math.max(1, fgLum), 0.90, 1.10);
+
+    function applySaturation(rr, gg, bb, scale){
+      const y = 0.2126*rr + 0.7152*gg + 0.0722*bb;
+      return [
+        clamp(y + (rr - y) * scale, 0, 255),
+        clamp(y + (gg - y) * scale, 0, 255),
+        clamp(y + (bb - y) * scale, 0, 255),
+      ];
+    }
+
+    const mid = 128;
+
+    for(let i=0;i<d.length;i+=4){
+      const a = d[i+3];
+      if(a < 2) continue;
+
+      let rr=d[i], gg=d[i+1], bb=d[i+2];
+
+      rr = rr*(1-colorBlend) + bgStats.r*colorBlend;
+      gg = gg*(1-colorBlend) + bgStats.g*colorBlend;
+      bb = bb*(1-colorBlend) + bgStats.b*colorBlend;
+
+      rr *= lumRatio; gg *= lumRatio; bb *= lumRatio;
+
+      const s = (1 - satBlend) * 1 + satBlend * satScale;
+      [rr,gg,bb] = applySaturation(rr,gg,bb, s);
+
+      rr = (rr - mid) * contrast + mid;
+      gg = (gg - mid) * contrast + mid;
+      bb = (bb - mid) * contrast + mid;
+
+      d[i]   = clamp(rr,0,255);
+      d[i+1] = clamp(gg,0,255);
+      d[i+2] = clamp(bb,0,255);
+    }
+
+    octx.putImageData(imgData, 0, 0);
+    return off;
+  }
+
+  function drawNaturalShadowUnderProduct(tctx){
+    const bg = state.bgStats;
+    if(!bg) return;
+
+    const baseAlpha = clamp(0.22 - (bg.lum / 255) * 0.12, 0.08, 0.18);
+    const blur = clamp(20 + (bg.lum/255)*12, 20, 34);
+    const stretch = 1.18;
+
+    const imgW = state.fgImg.width * state.fgScale;
+    const imgH = state.fgImg.height * state.fgScale;
+
+    const cx = state.fgX;
+    const cy = state.fgY + imgH*0.38;
+
+    tctx.save();
+    tctx.globalAlpha = baseAlpha;
+    tctx.fillStyle = "black";
+    tctx.filter = `blur(${blur}px)`;
+    tctx.beginPath();
+    tctx.ellipse(cx, cy, (imgW*0.30)*stretch, (imgH*0.06), 0, 0, Math.PI*2);
+    tctx.fill();
+    tctx.restore();
+
+    tctx.save();
+    tctx.globalAlpha = clamp(baseAlpha*0.85, 0.06, 0.14);
+    tctx.fillStyle = "black";
+    tctx.filter = `blur(${Math.max(10, blur*0.42)}px)`;
+    tctx.beginPath();
+    tctx.ellipse(cx, cy - imgH*0.02, (imgW*0.22), (imgH*0.035), 0, 0, Math.PI*2);
+    tctx.fill();
+    tctx.restore();
+  }
+
+  function getCenteredCropRect(srcW, srcH, targetW, targetH){
+    const srcAR = srcW / srcH;
+    const tarAR = targetW / targetH;
+    let cw, ch;
+    if(srcAR > tarAR){
+      ch = srcH;
+      cw = srcH * tarAR;
+    } else {
+      cw = srcW;
+      ch = srcW / tarAR;
+    }
+    const x = (srcW - cw) / 2;
+    const y = (srcH - ch) / 2;
+    return { x, y, w: cw, h: ch };
+  }
+
+  function drawCornerMarks(tctx, x, y, w, h, len=26, lw=3, col="rgba(255,255,255,.92)"){
+    tctx.save();
+    tctx.strokeStyle = col;
+    tctx.lineWidth = lw;
+    tctx.lineCap = "round";
+    tctx.beginPath(); tctx.moveTo(x, y+len); tctx.lineTo(x, y); tctx.lineTo(x+len, y); tctx.stroke();
+    tctx.beginPath(); tctx.moveTo(x+w-len, y); tctx.lineTo(x+w, y); tctx.lineTo(x+w, y+len); tctx.stroke();
+    tctx.beginPath(); tctx.moveTo(x+w, y+h-len); tctx.lineTo(x+w, y+h); tctx.lineTo(x+w-len, y+h); tctx.stroke();
+    tctx.beginPath(); tctx.moveTo(x+len, y+h); tctx.lineTo(x, y+h); tctx.lineTo(x, y+h-len); tctx.stroke();
+    tctx.restore();
+  }
+
+  function drawSafeZone(tctx){
+    const preset = state.activePreset;
+    const r = getCenteredCropRect(cv.width, cv.height, preset.w, preset.h);
+    const m = Math.min(r.w, r.h) * 0.07;
+    const inner = { x: r.x + m, y: r.y + m, w: r.w - m*2, h: r.h - m*2 };
+
+    tctx.save();
+    tctx.fillStyle = "rgba(0,0,0,0.20)";
+    tctx.beginPath();
+    tctx.rect(0,0,cv.width, cv.height);
+    tctx.rect(r.x, r.y, r.w, r.h);
+    tctx.fill("evenodd");
+
+    tctx.strokeStyle = "rgba(255,255,255,0.92)";
+    tctx.lineWidth = 3.5;
+    tctx.strokeRect(r.x, r.y, r.w, r.h);
+    drawCornerMarks(tctx, r.x, r.y, r.w, r.h, 28, 4, "rgba(255,255,255,.92)");
+
+    tctx.strokeStyle = "rgba(255,255,255,0.70)";
+    tctx.lineWidth = 3;
+    tctx.setLineDash([10,10]);
+    tctx.strokeRect(inner.x, inner.y, inner.w, inner.h);
+    tctx.setLineDash([]);
+    drawCornerMarks(tctx, inner.x, inner.y, inner.w, inner.h, 22, 3, "rgba(255,255,255,.70)");
+    tctx.restore();
+  }
+
+  function renderScene(tctx, includeGuide){
+    tctx.clearRect(0,0,cv.width, cv.height);
+
+    if(state.bgImg){
+      tctx.drawImage(state.bgImg, 0, 0, cv.width, cv.height);
+    } else {
+      tctx.fillStyle = "#ffffff";
+      tctx.fillRect(0,0,cv.width, cv.height);
+    }
+
+    if(state.fgImg){
+      if(state.bgImg) drawNaturalShadowUnderProduct(tctx);
+
+      // ✅ 表示用の商品：自動フィルター + 手動明るさ
+      let imgToDraw = state.isMatched && state.filteredFgCanvas ? state.filteredFgCanvas : state.fgImg;
+      if(state.brightness !== 0){
+        imgToDraw = applyBrightness(imgToDraw, state.brightness);
+      }
+
+      const w = imgToDraw.width * state.fgScale;
+      const h = imgToDraw.height * state.fgScale;
+      const ang = deg2rad(state.fgRotDeg);
+
+      tctx.save();
+      tctx.imageSmoothingEnabled = true;
+      tctx.imageSmoothingQuality = "high";
+      tctx.translate(state.fgX, state.fgY);
+      tctx.rotate(ang);
+      tctx.drawImage(imgToDraw, -w/2, -h/2, w, h);
+      tctx.restore();
+    }
+
+    if(includeGuide && state.bgImg && state.fgImg){
+      drawSafeZone(tctx);
+    }
+  }
+
+  function render(){ renderScene(ctx, true); }
+
+  function exportPreset(preset){
+    const scene = document.createElement('canvas');
+    scene.width = cv.width;
+    scene.height = cv.height;
+    const sctx = scene.getContext('2d');
+    renderScene(sctx, false);
+
+    const out = document.createElement('canvas');
+    out.width = preset.w;
+    out.height = preset.h;
+    const octx = out.getContext('2d');
+
+    const srcW = scene.width, srcH = scene.height;
+    const scale = Math.max(out.width / srcW, out.height / srcH);
+    const dw = srcW * scale;
+    const dh = srcH * scale;
+    const dx = (out.width - dw) / 2;
+    const dy = (out.height - dh) / 2;
+
+    octx.imageSmoothingEnabled = true;
+    octx.imageSmoothingQuality = "high";
+    octx.drawImage(scene, dx, dy, dw, dh);
+
+    const a = document.createElement('a');
+    const ts = new Date().toISOString().replace(/[:.]/g,'-');
+    a.download = `bgmatch_${state.activePreset.key.toLowerCase()}_${out.width}x${out.height}_${ts}.png`;
+    a.href = out.toDataURL('image/png');
+    a.click();
+  }
+
+  function setActivePreset(preset){
+    state.activePreset = preset;
+    segSB.classList.toggle("active", preset.key === "SB");
+    segDSP.classList.toggle("active", preset.key === "DSP");
+    render();
+  }
+
+  function setScale(v){
+    state.fgScale = clamp(v, 0.2, 3);
+    scaleRange.value = String(state.fgScale);
+    scaleVal.textContent = state.fgScale.toFixed(2);
+    render();
+  }
+
+  function setRotation(deg){
+    state.fgRotDeg = clamp(deg, -30, 30);
+    rotRange.value = String(state.fgRotDeg);
+    rotVal.textContent = String(state.fgRotDeg);
+    render();
+  }
+
+  function setBrightness(v){
+    state.brightness = clamp(v, -40, 40);
+    brightRange.value = String(state.brightness);
+    brightVal.textContent = String(state.brightness);
+    render();
+  }
+
+  function resetFilter(){
+    state.isMatched = false;
+    state.filteredFgCanvas = null;
+    render();
+    updateUI();
+  }
+
+  function isInsideProduct(mx, my){
+    if(!state.fgImg) return false;
+
+    const w = state.fgImg.width * state.fgScale;
+    const h = state.fgImg.height * state.fgScale;
+
+    const dx = mx - state.fgX;
+    const dy = my - state.fgY;
+    const ang = deg2rad(-state.fgRotDeg);
+    const lx = dx * Math.cos(ang) - dy * Math.sin(ang);
+    const ly = dx * Math.sin(ang) + dy * Math.cos(ang);
+
+    return (lx >= -w/2 && lx <= w/2 && ly >= -h/2 && ly <= h/2);
+  }
+
+  function getMousePos(e){
+    const rect = cv.getBoundingClientRect();
+    const sx = cv.width / rect.width;
+    const sy = cv.height / rect.height;
+    return { x: (e.clientX - rect.left) * sx, y: (e.clientY - rect.top) * sy };
+  }
+
+  function setStep(el, mode){
+    el.classList.remove("active","done");
+    if(mode === "active") el.classList.add("active");
+    if(mode === "done") el.classList.add("done");
+  }
+
+  function updateUI(){
+    const hasBg = !!state.bgImg;
+    const hasFg = !!state.fgImg;
+    const ready = hasBg && hasFg;
+
+    upBg.classList.toggle("next", !hasBg);
+    upBg.classList.toggle("done", hasBg);
+
+    upFg.classList.toggle("next", hasBg && !hasFg);
+    upFg.classList.toggle("done", hasFg);
+
+    if(!hasBg){
+      setStep(st1, "active"); setStep(st2, ""); setStep(st3, ""); setStep(st4, ""); setStep(st5, "");
+    } else if(!hasFg){
+      setStep(st1, "done"); setStep(st2, "active"); setStep(st3, ""); setStep(st4, ""); setStep(st5, "");
+    } else if(!state.isMatched){
+      setStep(st1, "done"); setStep(st2, "done"); setStep(st3, "active"); setStep(st4, ""); setStep(st5, "");
+    } else {
+      setStep(st1, "done"); setStep(st2, "done"); setStep(st3, "done"); setStep(st4, "done"); setStep(st5, "active");
+    }
+
+    matchBtn.disabled = !ready;
+    resetBtn.disabled = !hasFg;
+    dlBtn.disabled = !ready;
+    fitBtn.disabled = !hasFg;
+    scaleRange.disabled = !hasFg;
+    rotRange.disabled = !hasFg;
+    rotResetBtn.disabled = !hasFg;
+
+    // ✅ 明るさは「商品が入ったら」触れる（なじませる前でもOK）
+    brightRange.disabled = !hasFg;
+    brightResetBtn.disabled = !hasFg;
+
+    matchBtn.classList.toggle("matchDone", state.isMatched);
+    matchBtn.classList.toggle("matchIdle", !state.isMatched);
+  }
+
+  // ===== Events =====
+  bgInput.addEventListener('change', async (e) => {
+    const f = e.target.files?.[0];
+    if(!f) return;
+
+    bgBtn.classList.add("hasFile");
+
+    const img = await loadImageFromFile(f);
+    state.bgImg = img;
+
+    fitCanvasToBackground(img);
+    state.bgStats = computeBgStats(img);
+
+    state.isMatched = false;
+    state.filteredFgCanvas = null;
+
+    render();
+    updateUI();
+  });
+
+  fgInput.addEventListener('change', async (e) => {
+    const f = e.target.files?.[0];
+    if(!f) return;
+
+    fgBtn.classList.add("hasFile");
+
+    const img = await loadImageFromFile(f);
+    state.fgImg = img;
+
+    state.fgX = cv.width * 0.5;
+    state.fgY = cv.height * 0.62;
+    setScale(1);
+    setRotation(0);
+    setBrightness(0);
+
+    state.isMatched = false;
+    state.filteredFgCanvas = null;
+
+    render();
+    updateUI();
+  });
+
+  scaleRange.addEventListener('input', () => setScale(parseFloat(scaleRange.value)));
+  rotRange.addEventListener('input', () => setRotation(parseInt(rotRange.value, 10)));
+  rotResetBtn.addEventListener('click', () => setRotation(0));
+
+  // ✅ brightness
+  brightRange.addEventListener('input', () => setBrightness(parseInt(brightRange.value, 10)));
+  brightResetBtn.addEventListener('click', () => setBrightness(0));
+
+  fitBtn.addEventListener('click', () => {
+    state.fgX = cv.width * 0.5;
+    state.fgY = cv.height * 0.62;
+    render();
+  });
+
+  matchBtn.addEventListener('click', () => {
+    if(!state.bgImg || !state.fgImg) return;
+    if(!state.bgStats) state.bgStats = computeBgStats(state.bgImg);
+    state.filteredFgCanvas = makeFilteredProduct(state.fgImg, state.bgStats);
+    state.isMatched = true;
+    render();
+    updateUI();
+  });
+
+  resetBtn.addEventListener('click', resetFilter);
+
+  dlBtn.addEventListener('click', () => {
+    if(!state.bgImg || !state.fgImg) return;
+    exportPreset(state.activePreset);
+  });
+
+  segSB.addEventListener('click', () => setActivePreset(PRESETS.SB));
+  segDSP.addEventListener('click', () => setActivePreset(PRESETS.DSP));
+
+  // Dragging
+  cv.addEventListener('mousedown', (e) => {
+    const p = getMousePos(e);
+    if(!state.fgImg) return;
+    if(!isInsideProduct(p.x, p.y)) return;
+
+    state.dragging = true;
+    state.dragOffX = p.x - state.fgX;
+    state.dragOffY = p.y - state.fgY;
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if(!state.dragging) return;
+    const p = getMousePos(e);
+
+    const fine = e.shiftKey ? 0.35 : 1.0;
+    state.fgX = state.fgX + (p.x - state.dragOffX - state.fgX) * fine;
+    state.fgY = state.fgY + (p.y - state.dragOffY - state.fgY) * fine;
+
+    render();
+  });
+
+  window.addEventListener('mouseup', () => { state.dragging = false; });
+
+  // Init
+  setActivePreset(PRESETS.SB);
+  updateUI();
+  render();
+})();
+</script>
+</body>
+</html>
